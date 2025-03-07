@@ -8,6 +8,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { ProfileButton } from '@/components/auth/ProfileButton';
 
 export const Navbar = () => {
   return (
@@ -42,6 +43,8 @@ export const Navbar = () => {
             <Button variant="ghost" size="icon">
               <Search className="h-5 w-5" />
             </Button>
+            
+            <ProfileButton />
             
             {/* Mobile Navigation */}
             <Sheet>
