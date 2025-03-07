@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 interface AuthFormProps {
   mode: 'login' | 'signup';
@@ -20,28 +21,28 @@ export const AuthForm = ({ mode }: AuthFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      // For demonstration purposes - in a real app, this would connect to an auth service
-      setTimeout(() => {
-        // Simulate successful authentication
-        localStorage.setItem('isAuthenticated', 'true');
-        if (mode === 'signup') {
-          localStorage.setItem('user', JSON.stringify({ name, email }));
-        } else {
-          localStorage.setItem('user', JSON.stringify({ email }));
-        }
-        
-        toast.success(
-          mode === 'login' ? 'Successfully logged in!' : 'Account created successfully!'
-        );
-        
-        navigate('/');
-      }, 1500);
+      // Simulate authentication API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Call login function from AuthContext
+      if (mode === 'signup') {
+        login(email, name);
+      } else {
+        login(email);
+      }
+      
+      toast.success(
+        mode === 'login' ? 'Successfully logged in!' : 'Account created successfully!'
+      );
+      
+      navigate('/');
     } catch (error) {
       toast.error('An error occurred. Please try again.');
     } finally {

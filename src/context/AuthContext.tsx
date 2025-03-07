@@ -1,5 +1,9 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import jwt from 'jsonwebtoken';
+
+// Secret key for JWT signing (in a real app, this would be in a server environment variable)
+const JWT_SECRET = 'table-taste-jwt-secret';
 
 interface User {
   name?: string;
@@ -13,6 +17,11 @@ interface AuthContextType {
   logout: () => void;
 }
 
+interface JwtPayload {
+  user: User;
+  exp: number;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -20,29 +29,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Check if user is already authenticated on mount
-    const authStatus = localStorage.getItem('isAuthenticated');
-    const userData = localStorage.getItem('user');
-    
-    if (authStatus === 'true' && userData) {
-      setUser(JSON.parse(userData));
-      setIsAuthenticated(true);
+    // Check for JWT token on mount
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      try {
+        // Verify and decode the token
+        const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+        const currentTime = Date.now() / 1000;
+        
+        // Check if token is still valid (not expired)
+        if (decoded.exp > currentTime) {
+          setUser(decoded.user);
+          setIsAuthenticated(true);
+        } else {
+          // Token expired, clear it
+          localStorage.removeItem('auth_token');
+        }
+      } catch (error) {
+        console.error('Invalid token:', error);
+        localStorage.removeItem('auth_token');
+      }
     }
   }, []);
 
   const login = (email: string, name?: string) => {
     const userData = name ? { name, email } : { email };
+    
+    // Create token payload with user data and expiration (24 hours)
+    const payload: JwtPayload = {
+      user: userData,
+      exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24)
+    };
+    
+    // Sign the token
+    const token = jwt.sign(payload, JWT_SECRET);
+    
+    // Save token to localStorage
+    localStorage.setItem('auth_token', token);
+    
+    // Update state
     setUser(userData);
     setIsAuthenticated(true);
-    localStorage.setItem('isAuthenticated', 'true');
-    localStorage.setItem('user', JSON.stringify(userData));
   };
 
   const logout = () => {
+    // Remove token from localStorage
+    localStorage.removeItem('auth_token');
+    
+    // Update state
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('user');
   };
 
   return (
